@@ -1,0 +1,27 @@
+name = "Python FastAPI"
+description = "A Python REST API with FastAPI and Pydantic"
+
+[[variables]]
+name = "project_name"
+description = "Name of the project (lowercase, hyphens allowed)"
+default = "my-api"
+
+[[variables]]
+name = "description"
+description = "Project description"
+default = "A REST API"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"
+
+[[variables]]
+name = "author_email"
+description = "Author email"
+default = "you@example.com"
+
+[hooks]
+post_create = [
+    "uv sync"
+]

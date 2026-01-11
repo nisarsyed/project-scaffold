@@ -1,0 +1,27 @@
+name = "Python CLI"
+description = "A Python CLI application with Typer and Rich"
+
+[[variables]]
+name = "project_name"
+description = "Name of the project (lowercase, hyphens allowed)"
+default = "my-cli"
+
+[[variables]]
+name = "description"
+description = "Project description"
+default = "A CLI tool"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"
+
+[[variables]]
+name = "author_email"
+description = "Author email"
+default = "you@example.com"
+
+[hooks]
+post_create = [
+    "uv sync"
+]

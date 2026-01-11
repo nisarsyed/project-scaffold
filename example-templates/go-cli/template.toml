@@ -1,0 +1,22 @@
+name = "Go CLI"
+description = "A Go CLI application with Cobra"
+
+[[variables]]
+name = "project_name"
+description = "Name of the project (lowercase, hyphens allowed)"
+default = "my-cli"
+
+[[variables]]
+name = "module_path"
+description = "Go module path (e.g., github.com/user/project)"
+default = "github.com/example/my-cli"
+
+[[variables]]
+name = "description"
+description = "Project description"
+default = "A CLI tool"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"

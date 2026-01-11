@@ -1,0 +1,17 @@
+name = "Express API"
+description = "An Express.js 5 REST API with TypeScript"
+
+[[variables]]
+name = "project_name"
+description = "Name of the project (lowercase, hyphens allowed)"
+default = "my-api"
+
+[[variables]]
+name = "description"
+description = "Project description"
+default = "A REST API"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"

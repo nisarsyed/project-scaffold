@@ -1,0 +1,22 @@
+name = "Next.js App"
+description = "A Next.js 16 application with TypeScript and Tailwind CSS v4"
+
+[[variables]]
+name = "project_name"
+description = "Name of the project (lowercase, hyphens allowed)"
+default = "my-app"
+
+[[variables]]
+name = "description"
+description = "Project description"
+default = "A Next.js application"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"
+
+[hooks]
+post_create = [
+    "pnpm install"
+]

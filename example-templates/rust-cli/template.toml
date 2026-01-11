@@ -1,0 +1,17 @@
+name = "Rust CLI App"
+description = "A basic Rust CLI application with clap"
+
+[[variables]]
+name = "project_name"
+description = "Name of the project"
+default = "my-cli"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"
+
+[[variables]]
+name = "description"
+description = "Project description"
+default = "A CLI tool"

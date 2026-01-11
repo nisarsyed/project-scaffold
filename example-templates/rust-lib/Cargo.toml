@@ -1,0 +1,19 @@
+[package]
+name = "{{project_name}}"
+version = "0.1.0"
+edition = "2021"
+description = "{{description}}"
+license = "MIT"
+authors = ["{{author}} <{{author_email}}>"]
+repository = "{{repository}}"
+readme = "README.md"
+keywords = []
+categories = []
+
+[lib]
+name = "{{project_name}}"
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]

@@ -1,0 +1,27 @@
+name = "Rust Library"
+description = "A Rust library crate ready for publishing"
+
+[[variables]]
+name = "project_name"
+description = "Name of the library (lowercase, hyphens allowed)"
+default = "my-lib"
+
+[[variables]]
+name = "description"
+description = "Library description"
+default = "A Rust library"
+
+[[variables]]
+name = "author"
+description = "Author name"
+default = "Your Name"
+
+[[variables]]
+name = "author_email"
+description = "Author email"
+default = "you@example.com"
+
+[[variables]]
+name = "repository"
+description = "Repository URL"
+default = "https://github.com/example/my-lib"
