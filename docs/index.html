@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Scaffold - Project templates, supercharged</title>
+    <meta name="description" content="Fast CLI tool for scaffolding projects from customizable templates. Written in Rust.">
+    <meta property="og:title" content="Project Scaffold">
+    <meta property="og:description" content="Stop copying and renaming. Scaffold production-ready projects in seconds.">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'term-black': '#0a0a0a',
+                        'term-dark': '#111111',
+                        'term-gray': '#1a1a1a',
+                        'term-border': '#2a2a2a',
+                        'term-muted': '#6b7280',
+                        'term-cyan': '#22d3ee',
+                        'term-green': '#4ade80',
+                        'term-yellow': '#fbbf24',
+                        'term-red': '#f87171',
+                    },
+                    fontFamily: {
+                        'mono': ['IBM Plex Mono', 'monospace'],
+                        'display': ['Space Mono', 'monospace'],
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'blink': 'blink 1s step-end infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'scan': 'scan 8s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        blink: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0' },
+                        },
+                        glow: {
+                            '0%': { filter: 'brightness(1) drop-shadow(0 0 2px currentColor)' },
+                            '100%': { filter: 'brightness(1.1) drop-shadow(0 0 8px currentColor)' },
+                        },
+                        scan: {
+                            '0%': { transform: 'translateY(-100%)' },
+                            '100%': { transform: 'translateY(100vh)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        /* CRT Scan Line Effect */
+        .scanlines::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.03),
+                rgba(0, 0, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Phosphor Glow */
+        .glow-cyan {
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.5),
+                         0 0 20px rgba(34, 211, 238, 0.3),
+                         0 0 30px rgba(34, 211, 238, 0.2);
+        }
+
+        .glow-box {
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.15),
+                        inset 0 0 20px rgba(34, 211, 238, 0.05);
+        }
+
+        /* Terminal Window */
+        .terminal-window {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 1px solid #333;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                        0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .terminal-header {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
+            border-bottom: 1px solid #333;
+        }
+
+        /* Code Block Styling */
+        .code-block {
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.3), transparent);
+        }
+
+        /* Typing Animation */
+        .typing-line {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 0.5s steps(40, end) forwards;
+            opacity: 0;
+        }
+
+        .typing-line.visible {
+            opacity: 1;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        /* Cursor */
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: #22d3ee;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+
+        /* Card Hover */
+        .feature-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0), transparent);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover::before {
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.8), transparent);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(34, 211, 238, 0.3);
+            box-shadow: 0 20px 40px -20px rgba(34, 211, 238, 0.2);
+        }
+
+        /* Tab Button */
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(34, 211, 238, 0.1);
+            border-color: rgba(34, 211, 238, 0.5);
+            color: #22d3ee;
+        }
+
+        /* Copy Button */
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(34, 211, 238, 0.2);
+        }
+
+        .copy-btn.copied {
+            color: #4ade80;
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Selection */
+        ::selection {
+            background: rgba(34, 211, 238, 0.3);
+            color: white;
+        }
+
+        /* Noise texture overlay */
+        .noise::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 9998;
+        }
+    </style>
+</head>
+<body class="bg-term-black text-gray-100 font-sans antialiased scanlines noise">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-term-black/80 backdrop-blur-md border-b border-term-border">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="#" class="flex items-center gap-3 group">
+                    <div class="w-8 h-8 rounded bg-term-cyan/10 border border-term-cyan/30 flex items-center justify-center group-hover:glow-box transition-all">
+                        <span class="text-term-cyan font-display font-bold text-sm">&gt;_</span>
+                    </div>
+                    <span class="font-display font-bold text-lg tracking-tight">scaffold</span>
+                </a>
+
+                <div class="flex items-center gap-6">
+                    <a href="#features" class="text-sm text-term-muted hover:text-term-cyan transition-colors font-mono">features</a>
+                    <a href="#install" class="text-sm text-term-muted hover:text-term-cyan transition-colors font-mono">install</a>
+                    <a href="https://github.com/nisarsyed/project-scaffold" target="_blank" class="flex items-center gap-2 text-sm text-term-muted hover:text-white transition-colors font-mono">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center pt-20 pb-16 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <!-- Eyebrow -->
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-term-gray border border-term-border mb-8">
+                <span class="w-2 h-2 rounded-full bg-term-green animate-pulse"></span>
+                <span class="text-sm font-mono text-term-muted">v0.1.0 — Built with Rust</span>
+            </div>
+
+            <!-- Headline -->
+            <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 tracking-tight">
+                <span class="text-white">Project templates,</span><br>
+                <span class="text-term-cyan glow-cyan">supercharged</span>
+            </h1>
+
+            <!-- Subheadline -->
+            <p class="text-xl md:text-2xl text-term-muted mb-12 max-w-2xl mx-auto font-light">
+                Stop copying and renaming. Scaffold production-ready projects in seconds.
+            </p>
+
+            <!-- Terminal Demo -->
+            <div class="terminal-window rounded-xl overflow-hidden mb-12 max-w-2xl mx-auto text-left animate-float">
+                <div class="terminal-header px-4 py-3 flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-term-red/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-term-yellow/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-term-green/80"></div>
+                    <span class="ml-4 text-xs text-term-muted font-mono">~/projects</span>
+                </div>
+                <div class="p-6 font-mono text-sm md:text-base space-y-3" id="terminal-content">
+                    <div class="terminal-line" data-delay="0">
+                        <span class="text-term-green">$</span>
+                        <span class="text-white ml-2">scaffold create</span>
+                    </div>
+                    <div class="terminal-line" data-delay="800">
+                        <span class="text-term-cyan">?</span>
+                        <span class="text-white ml-2">Select a template:</span>
+                        <span class="text-term-cyan ml-2">fastapi</span>
+                    </div>
+                    <div class="terminal-line" data-delay="1600">
+                        <span class="text-term-cyan">?</span>
+                        <span class="text-white ml-2">Project name:</span>
+                        <span class="text-term-cyan ml-2">my-api</span>
+                    </div>
+                    <div class="terminal-line" data-delay="2400">
+                        <span class="text-term-cyan">?</span>
+                        <span class="text-white ml-2">Author:</span>
+                        <span class="text-term-cyan ml-2">Nisar Syed</span>
+                    </div>
+                    <div class="terminal-line" data-delay="3200">
+                        <span class="text-term-green">✓</span>
+                        <span class="text-white ml-2">Created project at</span>
+                        <span class="text-term-cyan ml-2">./my-api</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTAs -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#install" class="px-8 py-4 bg-term-cyan text-term-black font-mono font-semibold rounded-lg hover:bg-term-cyan/90 transition-all hover:shadow-lg hover:shadow-term-cyan/20">
+                    Get Started
+                </a>
+                <a href="https://github.com/nisarsyed/project-scaffold" target="_blank" class="px-8 py-4 border border-term-border text-white font-mono rounded-lg hover:border-term-cyan/50 hover:text-term-cyan transition-all">
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof Strip -->
+    <section class="py-12 border-y border-term-border bg-term-dark/50">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex flex-wrap items-center justify-center gap-8 md:gap-16">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-orange-500" viewBox="0 0 24 24" fill="currentColor"><path d="M23.687 11.709l-10.313-10.312c-.417-.417-1.094-.417-1.51 0l-2.14 2.14 2.708 2.708c.63-.211 1.352-.063 1.852.437.503.503.65 1.24.427 1.877l2.61 2.61c.636-.223 1.374-.076 1.877.427.703.703.703 1.843 0 2.546-.703.703-1.843.703-2.546 0-.528-.528-.674-1.313-.414-1.967l-2.434-2.434v6.407c.173.086.333.198.476.341.703.703.703 1.843 0 2.546-.703.703-1.843.703-2.546 0-.703-.703-.703-1.843 0-2.546.175-.175.371-.307.586-.398v-6.468c-.215-.091-.411-.223-.586-.398-.531-.531-.675-1.322-.407-1.981l-2.67-2.67-7.044 7.044c-.417.417-.417 1.094 0 1.51l10.313 10.313c.417.417 1.094.417 1.51 0l10.253-10.253c.417-.417.417-1.094 0-1.51z"/></svg>
+                    <span class="font-mono text-term-muted">Open Source</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-orange-600" viewBox="0 0 24 24" fill="currentColor"><path d="M23.834 8.101a13.912 13.912 0 0 1-13.643 11.72 10.105 10.105 0 0 1-1.994-.12 6.111 6.111 0 0 1-5.082-5.761 5.934 5.934 0 0 1 11.867-.084c.025.983-.401 1.846-1.277 1.871-.936 0-1.374-.668-1.374-1.567v-2.5a1.531 1.531 0 0 0-1.52-1.533H8.715a3.648 3.648 0 1 0 2.695 6.08l.073-.11.074.121a2.58 2.58 0 0 0 2.2 1.048 2.909 2.909 0 0 0 2.695-3.04 7.912 7.912 0 0 0-.217-1.932 7.404 7.404 0 0 0-14.64 1.603 7.497 7.497 0 0 0 7.308 7.405 12.174 12.174 0 0 0 1.752-.125 12.632 12.632 0 0 0 11.885-13.26 12.235 12.235 0 0 0-.248-2.474ZM8.884 11.138a2.376 2.376 0 1 1 0 4.752 2.376 2.376 0 0 1 0-4.752Z"/><circle cx="20.5" cy="3.5" r="3"/></svg>
+                    <span class="font-mono text-term-muted">Built with Rust</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="font-mono text-term-muted">macOS · Linux · Windows</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-term-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span class="font-mono text-term-muted">2 Templates Included</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-24 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">
+                    Everything you need to <span class="text-term-cyan">scaffold fast</span>
+                </h2>
+                <p class="text-term-muted text-lg max-w-2xl mx-auto">
+                    From solo projects to team-wide standardization. One tool, endless possibilities.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-6">
+                    <div class="w-12 h-12 rounded-lg bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-lg mb-2">Instant Start</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        2 production templates included. Works immediately after install — no configuration required.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-6">
+                    <div class="w-12 h-12 rounded-lg bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-lg mb-2">Variable Substitution</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        <code class="text-term-cyan text-xs">{{project_name}}</code> in files AND paths. No manual find-replace ever again.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-6">
+                    <div class="w-12 h-12 rounded-lg bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-lg mb-2">Conditional Files</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Include Dockerfile only when needed. Smart template logic keeps projects clean.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-6">
+                    <div class="w-12 h-12 rounded-lg bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-term-cyan" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-lg mb-2">Git Integration</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Add templates from GitHub with <code class="text-term-cyan text-xs">github:org/repo</code> shorthand. Supports monorepos.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-6">
+                    <div class="w-12 h-12 rounded-lg bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-lg mb-2">Post-Create Hooks</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Auto-run <code class="text-term-cyan text-xs">npm install</code>, <code class="text-term-cyan text-xs">git init</code>, or any setup command after scaffolding.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-6">
+                    <div class="w-12 h-12 rounded-lg bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-lg mb-2">Global Defaults</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Set author and email once, use across all projects. Your preferences, remembered.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="py-24 px-6 bg-term-dark/50 border-y border-term-border">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">
+                    Three steps to <span class="text-term-cyan">your next project</span>
+                </h2>
+            </div>
+
+            <div class="space-y-12">
+                <!-- Step 1 -->
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-term-cyan/10 border border-term-cyan/30 flex items-center justify-center">
+                        <span class="font-display font-bold text-term-cyan">1</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-display font-bold text-xl mb-3">Install</h3>
+                        <div class="code-block rounded-lg overflow-hidden">
+                            <div class="flex items-center justify-between px-4 py-2 bg-term-border/30">
+                                <span class="text-xs font-mono text-term-muted">bash</span>
+                                <button class="copy-btn px-2 py-1 rounded text-xs font-mono text-term-muted hover:text-white" data-code="curl -fsSL https://raw.githubusercontent.com/nisarsyed/project-scaffold/main/install.sh | sh">
+                                    Copy
+                                </button>
+                            </div>
+                            <pre class="p-4 overflow-x-auto"><code class="font-mono text-sm text-term-cyan">curl -fsSL https://raw.githubusercontent.com/nisarsyed/project-scaffold/main/install.sh | sh</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-term-cyan/10 border border-term-cyan/30 flex items-center justify-center">
+                        <span class="font-display font-bold text-term-cyan">2</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-display font-bold text-xl mb-3">Create</h3>
+                        <div class="code-block rounded-lg overflow-hidden">
+                            <div class="flex items-center justify-between px-4 py-2 bg-term-border/30">
+                                <span class="text-xs font-mono text-term-muted">bash</span>
+                                <button class="copy-btn px-2 py-1 rounded text-xs font-mono text-term-muted hover:text-white" data-code="scaffold create fastapi -o my-api -y">
+                                    Copy
+                                </button>
+                            </div>
+                            <pre class="p-4 overflow-x-auto"><code class="font-mono text-sm text-term-cyan">scaffold create fastapi -o my-api -y</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-term-cyan/10 border border-term-cyan/30 flex items-center justify-center">
+                        <span class="font-display font-bold text-term-cyan">3</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-display font-bold text-xl mb-3">Build</h3>
+                        <div class="code-block rounded-lg overflow-hidden">
+                            <div class="flex items-center justify-between px-4 py-2 bg-term-border/30">
+                                <span class="text-xs font-mono text-term-muted">bash</span>
+                                <button class="copy-btn px-2 py-1 rounded text-xs font-mono text-term-muted hover:text-white" data-code="cd my-api && uv sync && uv run uvicorn src.main:app --reload">
+                                    Copy
+                                </button>
+                            </div>
+                            <pre class="p-4 overflow-x-auto"><code class="font-mono text-sm text-term-cyan">cd my-api && uv sync && uv run uvicorn src.main:app --reload</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bundled Templates -->
+    <section class="py-24 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">
+                    Production-ready <span class="text-term-cyan">out of the box</span>
+                </h2>
+                <p class="text-term-muted text-lg">
+                    Two modern templates included. Start building immediately.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- FastAPI -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L1.75 6v12L12 24l10.25-6V6zm-1.775 18l1.775-1.5 1.775 1.5-1.775 3zm3.55-3l-1.775-1.5-1.775 1.5V9l1.775-1.5L13.775 9z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-bold text-xl">FastAPI</h3>
+                            <span class="text-sm text-term-muted font-mono">Python REST API</span>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 text-sm text-term-muted">
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>FastAPI with Pydantic v2</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Async support & type hints</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Auto-generated OpenAPI docs</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>uv package manager</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Next.js -->
+                <div class="feature-card bg-term-gray border border-term-border rounded-xl p-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11.572 0c-.176 0-.31.001-.358.007a19.76 19.76 0 0 1-.364.033C7.443.346 4.25 2.185 2.228 5.012a11.875 11.875 0 0 0-2.119 5.243c-.096.659-.108.854-.108 1.747s.012 1.089.108 1.748c.652 4.506 3.86 8.292 8.209 9.695.779.251 1.6.422 2.534.525.363.04 1.935.04 2.299 0 1.611-.178 2.977-.577 4.323-1.264.207-.106.247-.134.219-.158-.02-.013-.9-1.193-1.955-2.62l-1.919-2.592-2.404-3.558a338.739 338.739 0 0 0-2.422-3.556c-.009-.002-.018 1.579-.023 3.51-.007 3.38-.01 3.515-.052 3.595a.426.426 0 0 1-.206.214c-.075.037-.14.044-.495.044H7.81l-.108-.068a.438.438 0 0 1-.157-.171l-.05-.106.006-4.703.007-4.705.072-.092a.645.645 0 0 1 .174-.143c.096-.047.134-.051.54-.051.478 0 .558.018.682.154.035.038 1.337 1.999 2.895 4.361a10760.433 10760.433 0 0 0 4.735 7.17l1.9 2.879.096-.063a12.317 12.317 0 0 0 2.466-2.163 11.944 11.944 0 0 0 2.824-6.134c.096-.66.108-.854.108-1.748 0-.893-.012-1.088-.108-1.747-.652-4.506-3.859-8.292-8.208-9.695a12.597 12.597 0 0 0-2.499-.523A33.119 33.119 0 0 0 11.572 0zm4.069 7.217c.347 0 .408.005.486.047a.473.473 0 0 1 .237.277c.018.06.023 1.365.018 4.304l-.006 4.218-.744-1.14-.746-1.14v-3.066c0-1.982.01-3.097.023-3.15a.478.478 0 0 1 .233-.296c.096-.05.13-.054.5-.054z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-bold text-xl">Next.js</h3>
+                            <span class="text-sm text-term-muted font-mono">React + TypeScript</span>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 text-sm text-term-muted">
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Next.js 16 with React 19</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>TypeScript configured</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Tailwind CSS v4</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-term-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>App Router + Turbopack</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="py-24 px-6 bg-term-dark/50 border-y border-term-border">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">
+                    Built for <span class="text-term-cyan">how you work</span>
+                </h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Solo Devs -->
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-xl mb-3">For Developers</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Save 4-8 hours per year on repetitive setup. Set defaults once, create projects in 10 seconds.
+                    </p>
+                </div>
+
+                <!-- Teams -->
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-xl mb-3">For Teams</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Enforce consistent project structures. Share templates via Git. Standardize CI/CD and linting.
+                    </p>
+                </div>
+
+                <!-- CI/CD -->
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-term-cyan/10 border border-term-cyan/20 flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-term-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </div>
+                    <h3 class="font-display font-bold text-xl mb-3">For CI/CD</h3>
+                    <p class="text-term-muted text-sm leading-relaxed">
+                        Non-interactive mode with <code class="text-term-cyan text-xs">-y</code> flag. Pass variables with <code class="text-term-cyan text-xs">-v key=value</code>. Fully scriptable.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Template.toml Example -->
+    <section class="py-24 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">
+                    Simple <span class="text-term-cyan">template format</span>
+                </h2>
+                <p class="text-term-muted text-lg">
+                    One TOML file defines your entire template. Variables, conditionals, hooks — all in one place.
+                </p>
+            </div>
+
+            <div class="code-block rounded-xl overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 bg-term-border/30 border-b border-term-border">
+                    <span class="text-sm font-mono text-term-muted">template.toml</span>
+                    <button class="copy-btn px-3 py-1 rounded text-sm font-mono text-term-muted hover:text-white" data-code='name = "My Template"
+description = "A starter template"
+
+[[variables]]
+name = "project_name"
+description = "Name of your project"
+default = "my-project"
+
+[[variables]]
+name = "include_docker"
+type = "bool"
+default = "false"
+
+[[conditionals]]
+include = "Dockerfile"
+when = "include_docker == true"
+
+[hooks]
+post_create = ["git init", "npm install"]'>
+                        Copy
+                    </button>
+                </div>
+                <pre class="p-6 overflow-x-auto text-sm"><code class="font-mono"><span class="text-term-green">name</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"My Template"</span>
+<span class="text-term-green">description</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"A starter template"</span>
+
+<span class="text-term-cyan">[[variables]]</span>
+<span class="text-term-green">name</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"project_name"</span>
+<span class="text-term-green">description</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"Name of your project"</span>
+<span class="text-term-green">default</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"my-project"</span>
+
+<span class="text-term-cyan">[[variables]]</span>
+<span class="text-term-green">name</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"include_docker"</span>
+<span class="text-term-green">type</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"bool"</span>
+<span class="text-term-green">default</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"false"</span>
+
+<span class="text-term-cyan">[[conditionals]]</span>
+<span class="text-term-green">include</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"Dockerfile"</span>
+<span class="text-term-green">when</span> <span class="text-term-muted">=</span> <span class="text-term-yellow">"include_docker == true"</span>
+
+<span class="text-term-cyan">[hooks]</span>
+<span class="text-term-green">post_create</span> <span class="text-term-muted">=</span> <span class="text-term-muted">[</span><span class="text-term-yellow">"git init"</span><span class="text-term-muted">,</span> <span class="text-term-yellow">"npm install"</span><span class="text-term-muted">]</span></code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="install" class="py-24 px-6 bg-term-dark/50 border-y border-term-border">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">
+                    Install in <span class="text-term-cyan">seconds</span>
+                </h2>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex flex-wrap justify-center gap-2 mb-8">
+                <button class="tab-btn active px-4 py-2 rounded-lg border border-term-border font-mono text-sm" data-tab="curl">
+                    curl (Recommended)
+                </button>
+                <button class="tab-btn px-4 py-2 rounded-lg border border-term-border font-mono text-sm text-term-muted" data-tab="cargo">
+                    cargo
+                </button>
+                <button class="tab-btn px-4 py-2 rounded-lg border border-term-border font-mono text-sm text-term-muted" data-tab="source">
+                    From Source
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <div id="tab-curl" class="tab-panel">
+                    <div class="code-block rounded-xl overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-term-border/30 border-b border-term-border">
+                            <span class="text-sm font-mono text-term-muted">macOS / Linux</span>
+                            <button class="copy-btn px-3 py-1 rounded text-sm font-mono text-term-muted hover:text-white" data-code="curl -fsSL https://raw.githubusercontent.com/nisarsyed/project-scaffold/main/install.sh | sh">
+                                Copy
+                            </button>
+                        </div>
+                        <pre class="p-6 overflow-x-auto"><code class="font-mono text-term-cyan">curl -fsSL https://raw.githubusercontent.com/nisarsyed/project-scaffold/main/install.sh | sh</code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-cargo" class="tab-panel hidden">
+                    <div class="code-block rounded-xl overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-term-border/30 border-b border-term-border">
+                            <span class="text-sm font-mono text-term-muted">Requires Rust</span>
+                            <button class="copy-btn px-3 py-1 rounded text-sm font-mono text-term-muted hover:text-white" data-code="cargo install project-scaffold">
+                                Copy
+                            </button>
+                        </div>
+                        <pre class="p-6 overflow-x-auto"><code class="font-mono text-term-cyan">cargo install project-scaffold</code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-source" class="tab-panel hidden">
+                    <div class="code-block rounded-xl overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-term-border/30 border-b border-term-border">
+                            <span class="text-sm font-mono text-term-muted">Build from source</span>
+                            <button class="copy-btn px-3 py-1 rounded text-sm font-mono text-term-muted hover:text-white" data-code="git clone https://github.com/nisarsyed/project-scaffold.git
+cd project-scaffold
+cargo install --path .">
+                                Copy
+                            </button>
+                        </div>
+                        <pre class="p-6 overflow-x-auto"><code class="font-mono text-term-cyan">git clone https://github.com/nisarsyed/project-scaffold.git
+cd project-scaffold
+cargo install --path .</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-32 px-6 relative overflow-hidden">
+        <!-- Background gradient -->
+        <div class="absolute inset-0 bg-gradient-to-b from-term-black via-term-cyan/5 to-term-black"></div>
+
+        <div class="relative max-w-3xl mx-auto text-center">
+            <h2 class="text-4xl md:text-5xl font-display font-bold mb-6">
+                Start scaffolding in <span class="text-term-cyan glow-cyan">30 seconds</span>
+            </h2>
+            <p class="text-xl text-term-muted mb-12">
+                Your next project is one command away.
+            </p>
+
+            <div class="code-block rounded-xl overflow-hidden inline-block">
+                <div class="flex items-center justify-between px-6 py-4 bg-term-border/30 border-b border-term-border">
+                    <span class="text-sm font-mono text-term-muted">Get started</span>
+                    <button class="copy-btn px-3 py-1 rounded text-sm font-mono text-term-muted hover:text-white" data-code="curl -fsSL https://raw.githubusercontent.com/nisarsyed/project-scaffold/main/install.sh | sh && scaffold create">
+                        Copy
+                    </button>
+                </div>
+                <pre class="px-6 py-5 overflow-x-auto"><code class="font-mono text-lg text-term-cyan">curl -fsSL https://raw.githubusercontent.com/nisarsyed/project-scaffold/main/install.sh | sh && scaffold create</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-term-border">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-term-cyan/10 border border-term-cyan/30 flex items-center justify-center">
+                        <span class="text-term-cyan font-display font-bold text-sm">&gt;_</span>
+                    </div>
+                    <span class="font-display font-bold">scaffold</span>
+                </div>
+
+                <div class="flex items-center gap-6 text-sm text-term-muted">
+                    <a href="https://github.com/nisarsyed/project-scaffold" target="_blank" class="hover:text-term-cyan transition-colors">GitHub</a>
+                    <a href="https://github.com/nisarsyed/project-scaffold/blob/main/LICENSE" target="_blank" class="hover:text-term-cyan transition-colors">MIT License</a>
+                    <span>Made with <span class="text-term-red">♥</span> and Rust</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Terminal typing animation
+        document.addEventListener('DOMContentLoaded', () => {
+            const lines = document.querySelectorAll('.terminal-line');
+            lines.forEach((line, index) => {
+                const delay = parseInt(line.dataset.delay) || 0;
+                setTimeout(() => {
+                    line.style.opacity = '1';
+                    line.style.transform = 'translateX(0)';
+                }, delay);
+                line.style.opacity = '0';
+                line.style.transform = 'translateX(-10px)';
+                line.style.transition = 'all 0.3s ease';
+            });
+        });
+
+        // Copy button functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const code = btn.dataset.code;
+                try {
+                    await navigator.clipboard.writeText(code);
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                }
+            });
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all tabs
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.classList.add('text-term-muted');
+                });
+                // Add active to clicked tab
+                btn.classList.add('active');
+                btn.classList.remove('text-term-muted');
+
+                // Hide all panels
+                document.querySelectorAll('.tab-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                // Show selected panel
+                const tabId = btn.dataset.tab;
+                document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return; // Skip empty anchors
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
